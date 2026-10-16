@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Інтерактивний робочий аркуш: Механічний рух (Фізика, 7 клас)</title>
+    <style>
+        :root {
+            --primary-color: #00875A; /* Береза / Оптимістичний зелений */
+            --secondary-color: #00A86B;
+            --accent-color: #FFB703; /* Яскравий акцент */
+            --bg-color: #F0FDF4;
+            --card-bg: #FFFFFF;
+            --text-color: #1F2937;
+            --success-color: #22C55E;
+            --error-color: #EF4444;
+            --border-radius: 12px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px rgba(0, 135, 90, 0.1);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 20px;
+        }
+
+        header h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: #4B5563;
+        }
+
+        .score-board {
+            position: sticky;
+            top: 10px;
+            background: var(--primary-color);
+            color: white;
+            padding: 15px 25px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .task-section {
+            background: #F8FAFC;
+            border: 2px solid #E2E8F0;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .task-section h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .task-number {
+            background: var(--primary-color);
+            color: white;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        /* 1. Встановлення відповідності */
+        .matching-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .match-column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .draggable-item, .drop-target {
+            background: white;
+            padding: 12px 15px;
+            border: 2px solid #CBD5E1;
+            border-radius: 8px;
+            cursor: grab;
+            user-select: none;
+            font-size: 0.95rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .draggable-item:active {
+            cursor: grabbing;
+        }
+
+        .drop-zone-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .drop-slot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            border: 2px dashed #94A3B8;
+            padding: 10px 15px;
+            border-radius: 8px;
+            min-height: 45px;
+        }
+
+        .drop-slot span.label {
+            font-weight: 500;
+            color: #334155;
+            max-width: 50%;
+        }
+
+        .drop-box {
+            flex-grow: 1;
+            max-width: 45%;
+            min-height: 35px;
+            background: #F1F5F9;
+            border: 2px solid #CBD5E1;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            justify-content: center;
+            text-align: center;
+        }
+
+        /* Bank of items for matching or word bank */
+        .word-bank {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 15px;
+            background: #E2E8F0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            min-height: 50px;
+        }
+
+        .word-chip {
+            background: white;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 8px 14px;
+            border-radius: 20px;
+            cursor: grab;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* Text inputs and inline blanks */
+        .inline-input, .text-input {
+            padding: 6px 12px;
+            border: 2px solid #CBD5E1;
+            border-radius: 6px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+            background: white;
+        }
+
+        .inline-input:focus, .text-input:focus {
+            border-color: var(--primary-color);
+        }
+
+        /* 4. Підпис зображень */
+        .image-labeling-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .image-label-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid #E2E8F0;
+        }
+
+        .emoji-icon {
+            font-size: 2.5rem;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .image-label-row select {
+            padding: 8px 12px;
+            border: 2px solid #CBD5E1;
+            border-radius: 6px;
+            font-size: 1rem;
+            flex-grow: 1;
+            outline: none;
+            background: white;
+        }
+
+        /* 5. Встановлення послідовності */
+        .sequence-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sequence-item {
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: grab;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .seq-1 { background-color: #0EA5E9; }
+        .seq-2 { background-color: #10B981; }
+        .seq-3 { background-color: #F59E0B; }
+        .seq-4 { background-color: #EF4444; }
+
+        /* 6. Вибір одного правильного варіанта */
+        .options-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 2px solid #E2E8F0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .radio-label:hover {
+            border-color: var(--primary-color);
+        }
+
+        .radio-label input {
+            accent-color: var(--primary-color);
+            width: 18px;
+            height: 18px;
+        }
+
+        /* 7. Вибір зображення */
+        .image-selection-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .image-card {
+            background: white;
+            border: 3px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .image-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-3px);
+        }
+
+        .image-card.selected {
+            border-color: var(--primary-color);
+            background-color: #E6F4EA;
+        }
+
+        /* 8. Відкрите запитання */
+        .open-question-box {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .open-question-box input {
+            max-width: 400px;
+        }
+
+        /* Button check */
+        .submit-container {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .check-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 135, 90, 0.3);
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .check-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        /* Validation feedback classes */
+        .correct {
+            border-color: var(--success-color) !important;
+            background-color: #DCFCE7 !important;
+        }
+
+        .incorrect {
+            border-color: var(--error-color) !important;
+            background-color: #FEE2E2 !important;
+        }
+
+        @media (max-width: 768px) {
+            .matching-container {
+                grid-template-columns: 1fr;
+            }
+            .image-selection-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="score-board" id="scoreBoard">
+    Правильних відповідей: <span id="correctCount">0</span> з <span id="totalCount">8</span>
+</div>
+
+<div class="container">
+    <header>
+        <h1>Інтерактивний робочий аркуш з фізики</h1>
+        <p>Тема: <strong>Механічний рух</strong> (Учні 7 класу)</p>
+    </header>
+
+    <!-- ЗАВДАННЯ 1: Встановлення відповідності -->
+    <div class="task-section" id="task1" data-task-type="matching">
+        <h3><span class="task-number">1</span> Встановлення відповідності</h3>
+        <p>Перетягніть поняття зліва до їх правильних визначень або прикладів справа (відповіді перемішані).</p>
+        
+        <div class="matching-container">
+            <div class="match-column" id="termsColumn">
+                <!-- Драг-елементи будуть перемішані через JS -->
+                <div class="draggable-item" draggable="true" data-term="Механічний рух">Механічний рух</div>
+                <div class="draggable-item" draggable="true" data-term="Тіло відліку">Тіло відліку</div>
+                <div class="draggable-item" draggable="true" data-term="Система координат">Система координат</div>
+                <div class="draggable-item" draggable="true" data-term="Матеріальна точка">Матеріальна точка</div>
+            </div>
+            <div class="match-column drop-zone-container">
+                <div class="drop-slot">
+                    <span class="label">Тіло, відносно якого розглядається положення інших тіл у будь-який момент часу.</span>
+                    <div class="drop-box" data-match="Тіло відліку"></div>
+                </div>
+                <div class="drop-slot">
+                    <span class="label">Зміна з часом положення тіла в просторі відносно інших тіл.</span>
+                    <div class="drop-box" data-match="Механічний рух"></div>
+                </div>
+                <div class="drop-slot">
+                    <span class="label">Лінійка або сукупність ліній, пов'язаних з тілом відліку для визначення положення.</span>
+                    <div class="drop-box" data-match="Система координат"></div>
+                </div>
+                <div class="drop-slot">
+                    <span class="label">Тіло, розмірами якого в умовах даної задачі можна знехтувати.</span>
+                    <div class="drop-box" data-match="Матеріальна точка"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЗАВДАННЯ 2: Вставка пропущених слів з варіантами -->
+    <div class="task-section" id="task2" data-task-type="word-bank-fill">
+        <h3><span class="task-number">2</span> Вставка пропущених слів (з варіантами)</h3>
+        <p>Перетягніть слова з банку слів у відповідні пропуски в тексті.</p>
+        
+        <div class="word-bank" id="wordBank">
+            <div class="word-chip" draggable="true" data-word="відносно">відносно</div>
+            <div class="word-chip" draggable="true" data-word="траєкторія">траєкторія</div>
+            <div class="word-chip" draggable="true" data-word="спокою">спокою</div>
+            <div class="word-chip" draggable="true" data-word="часу">часу</div>
+        </div>
+
+        <p style="font-size: 1.05rem; line-height: 1.8;">
+            Будь-який стан руху чи стан <span class="drop-box inline-drop" data-answer="спокою" style="display:inline-block; width:110px; height:30px; vertical-align:middle; text-align:center; background:white; border:2px dashed #94A3B8; border-radius:6px;"></span> є відносним. Положення тіла змінюється з плином <span class="drop-box inline-drop" data-answer="часу" style="display:inline-block; width:90px; height:30px; vertical-align:middle; text-align:center; background:white; border:2px dashed #94A3B8; border-radius:6px;"></span> <span class="drop-box inline-drop" data-answer="відносно" style="display:inline-block; width:110px; height:30px; vertical-align:middle; text-align:center; background:white; border:2px dashed #94A3B8; border-radius:6px;"></span> інших тіл, а лінія, яку описує тіло під час руху, називається лінією або рухом, зокрема її називають траєкторією.
+        </p>
+    </div>
+
+    <!-- ЗАВДАННЯ 3: Вставка пропущених слів без варіантів -->
+    <div class="task-section" id="task3" data-task-type="text-input-fill">
+        <h3><span class="task-number">3</span> Вставка пропущених слів без наданих варіантів</h3>
+        <p>Надрукуйте правильні слова у порожніх текстових полях.</p>
+        <p style="font-size: 1.05rem; line-height: 1.8;">
+            Сукупність тіла відліку, пов'язаної з ним системи <input type="text" class="inline-input text-fill" data-answer="координат" style="width: 140px;" /> та годинника для вимірювання часу утворюють систему <input type="text" class="inline-input text-fill" data-answer="відліку" style="width: 120px;" />.
+        </p>
+    </div>
+
+    <!-- ЗАВДАННЯ 4: Підпис зображень -->
+    <div class="task-section" id="task4" data-task-type="image-labeling">
+        <h3><span class="task-number">4</span> Підпис зображень</h3>
+        <p>Оберіть правильний фізичний термін для кожного із запропонованих об'єктів або ситуацій.</p>
+        
+        <div class="image-labeling-grid">
+            <div class="image-label-row" data-correct="Матеріальна точка">
+                <div class="emoji-icon">🛰️</div>
+                <select class="image-select">
+                    <option value="">-- Оберіть варіант --</option>
+                    <option value="Матеріальна точка">Штучний супутник Землі на орбіті (якщо нас цікавить лише його рух навколо планети)</option>
+                    <option value="Тіло відліку">Тіло відліку</option>
+                    <option value="Механічний рух">Механічний рух</option>
+                    <option value="Траєкторія">Траєкторія</option>
+                </select>
+            </div>
+            <div class="image-label-row" data-correct="Тіло відліку">
+                <div class="emoji-icon">🏫</div>
+                <select class="image-select">
+                    <option value="">-- Оберіть варіант --</option>
+                    <option value="Матеріальна точка">Матеріальна точка</option>
+                    <option value="Тіло відліку">Шкільна будівля, відносно якої учень вимірює своє положення</option>
+                    <option value="Механічний рух">Механічний рух</option>
+                    <option value="Система координат">Система координат</option>
+                </select>
+            </div>
+            <div class="image-label-row" data-correct="Механічний рух">
+                <div class="emoji-icon">🚆</div>
+                <select class="image-select">
+                    <option value="">-- Оберіть варіант --</option>
+                    <option value="Матеріальна точка">Матеріальна точка</option>
+                    <option value="Тіло відліку">Тіло відліку</option>
+                    <option value="Механічний рух">Рух потяга по рейках від однієї станції до іншої</option>
+                    <option value="Система координат">Система координат</option>
+                </select>
+            </div>
+            <div class="image-label-row" data-correct="Система координат">
+                <div class="emoji-icon">📊</div>
+                <select class="image-select">
+                    <option value="">-- Оберіть варіант --</option>
+                    <option value="Матеріальна точка">Матеріальна точка</option>
+                    <option value="Тіло відліку">Тіло відліку</option>
+                    <option value="Механічний рух">Механічний рух</option>
+                    <option value="Система координат">Осі X та Y, накреслені на аркуші паперу для визначення положення точки</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЗАВДАННЯ 5: Встановлення послідовності -->
+    <div class="task-section" id="task5" data-task-type="sequence">
+        <h3><span class="task-number">5</span> Встановлення послідовності</h3>
+        <p>Розташуйте етапи опису механічного руху в правильній послідовності (перетягуйте елементи вгору або вниз):</p>
+        
+        <div class="sequence-container" id="sortableSequence">
+            <div class="sequence-item seq-1" draggable="true" data-order="1">1. Вибрати тіло відліку</div>
+            <div class="sequence-item seq-2" draggable="true" data-order="2">2. Пов'язати з тілом відліку систему координат</div>
+            <div class="sequence-item seq-3" draggable="true" data-order="3">3. Обрати годинник для вимірювання часу</div>
+            <div class="sequence-item seq-4" draggable="true" data-order="4">4. Визначити положення тіла в будь-який момент часу</div>
+        </div>
+    </div>
+
+    <!-- ЗАВДАННЯ 6: Вибір одного правильного варіанта -->
+    <div class="task-section" id="task6" data-task-type="single-choice">
+        <h3><span class="task-number">6</span> Вибір одного правильного варіанта</h3>
+        <p>У яких випадках автобус, що їде з Києва до Львова, можна вважати матеріальною точкою?</p>
+        
+        <div class="options-group">
+            <label class="radio-label">
+                <input type="radio" name="q6" value="wrong">
+                Коли пасажир купує квиток у салоні автобуса
+            </label>
+            <label class="radio-label">
+                <input type="radio" name="q6" value="correct">
+                Коли визначають час руху автобуса між містами
+            </label>
+            <label class="radio-label">
+                <input type="radio" name="q6" value="wrong">
+                Коли автобус паркується на автостанції біля платформи
+            </label>
+            <label class="radio-label">
+                <input type="radio" name="q6" value="wrong">
+                Коли водій заїжджає на автомийку
+            </label>
+        </div>
+    </div>
+
+    <!-- ЗАВДАННЯ 7: Вибір зображення -->
+    <div class="task-section" id="task7" data-task-type="image-selection">
+        <h3><span class="task-number">7</span> Вибір зображення</h3>
+        <p>Яка піктограма найкраще ілюструє поняття «відносність руху» (пасажир у рухомому вагоні потяга)?</p>
+        
+        <div class="image-selection-grid">
+            <div class="image-card" data-correct="false">🚲</div>
+            <div class="image-card" data-correct="true">🚄</div>
+            <div class="image-card" data-correct="false">⚓</div>
+            <div class="image-card" data-correct="false">🏔️</div>
+        </div>
+    </div>
+
+    <!-- ЗАВДАННЯ 8: Відкрите запитання -->
+    <div class="task-section" id="task8" data-task-type="open-question">
+        <h3><span class="task-number">8</span> Відкрите запитання</h3>
+        <p>Як називається зміна з часом положення тіла в просторі відносно інших тіл?</p>
+        <div class="open-question-box">
+            <input type="text" class="text-input" id="openAns" placeholder="Введіть відповідь..." style="width: 100%; max-width: 400px;" data-answer="механічний рух">
+        </div>
+    </div>
+
+    <div class="submit-container">
+        <button class="check-btn" id="checkBtn">Перевірити результати</button>
+    </div>
+</div>
+
+<script>
+    // --- DRAG AND DROP LOGIC FOR TASK 1 & TASK 2 ---
+    let draggedElement = null;
+
+    // Task 1: Randomize left column items
+    const termsColumn = document.getElementById('termsColumn');
+    if (termsColumn) {
+        let items = Array.from(termsColumn.children);
+        items.sort(() => Math.random() - 0.5);
+        items.forEach(item => termsColumn.appendChild(item));
+    }
+
+    // Generic Drag and Drop Events
+    document.addEventListener('dragstart', (e) => {
+        if (e.target.classList.contains('draggable-item') || e.target.classList.contains('word-chip') || e.target.classList.contains('sequence-item')) {
+            draggedElement = e.target;
+            e.dataTransfer.setData('text/plain', e.target.outerHTML);
+        }
+    });
+
+    document.addEventListener('dragover', (e) => {
+        e.preventDefault();
+    });
+
+    // Drop boxes for Task 1 and Task 2
+    document.querySelectorAll('.drop-box').forEach(box => {
+        box.addEventListener('dragover', (e) => e.preventDefault());
+        box.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (draggedElement && (draggedElement.classList.contains('draggable-item') || draggedElement.classList.contains('word-chip'))) {
+                box.textContent = draggedElement.textContent;
+                box.dataset.selected = draggedElement.dataset.term || draggedElement.dataset.word;
+                draggedElement.style.opacity = '0.4';
+            }
+        });
+    });
+
+    // Task 5: Sequence sorting via drag and drop
+    const sortableSequence = document.getElementById('sortableSequence');
+    if (sortableSequence) {
+        let seqItems = sortableSequence.querySelectorAll('.sequence-item');
+        seqItems.forEach(item => {
+            item.addEventListener('dragover', (e) => e.preventDefault());
+            item.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (draggedElement && draggedElement.classList.contains('sequence-item') && draggedElement !== item) {
+                    let allItems = Array.from(sortableSequence.querySelectorAll('.sequence-item'));
+                    let draggedIdx = allItems.indexOf(draggedElement);
+                    let targetIdx = allItems.indexOf(item);
+                    if (draggedIdx < targetIdx) {
+                        sortableSequence.insertBefore(draggedElement, item.nextSibling);
+                    } else {
+                        sortableSequence.insertBefore(draggedElement, item);
+                    }
+                }
+            });
+        });
+    }
+
+    // Task 7: Image selection grid click handler
+    document.querySelectorAll('.image-card').forEach(card => {
+        card.addEventListener('click', () => {
+            let parentGrid = card.parentElement;
+            parentGrid.querySelectorAll('.image-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+        });
+    });
+
+    // --- CHECK RESULTS LOGIC ---
+    document.getElementById('checkBtn').addEventListener('click', () => {
+        let correctCount = 0;
+        let totalCount = 8;
+
+        // 1. Task 1 Check
+        let t1Correct = true;
+        document.querySelectorAll('#task1 .drop-box').forEach(box => {
+            let expected = box.getAttribute('data-match');
+            let actual = box.dataset.selected;
+            if (actual === expected) {
+                box.classList.add('correct');
+                box.classList.remove('incorrect');
+            } else {
+                box.classList.add('incorrect');
+                box.classList.remove('correct');
+                t1Correct = false;
+            }
+        });
+        if (t1Correct) correctCount++;
+
+        // 2. Task 2 Check
+        let t2Correct = true;
+        document.querySelectorAll('#task2 .inline-drop').forEach(box => {
+            let expected = box.getAttribute('data-answer');
+            let actual = box.dataset.selected;
+            if (actual && actual.toLowerCase().trim() === expected.toLowerCase()) {
+                box.classList.add('correct');
+                box.classList.remove('incorrect');
+            } else {
+                box.classList.add('incorrect');
+                box.classList.remove('correct');
+                t2Correct = false;
+            }
+        });
+        if (t2Correct) correctCount++;
+
+        // 3. Task 3 Check
+        let t3Correct = true;
+        document.querySelectorAll('#task3 .text-fill').forEach(input => {
+            let expected = input.getAttribute('data-answer');
+            let actual = input.value.trim().toLowerCase();
+            if (actual === expected) {
+                input.classList.add('correct');
+                input.classList.remove('incorrect');
+            } else {
+                input.classList.add('incorrect');
+                input.classList.remove('correct');
+                t3Correct = false;
+            }
+        });
+        if (t3Correct) correctCount++;
+
+        // 4. Task 4 Check
+        let t4Correct = true;
+        document.querySelectorAll('#task4 .image-label-row').forEach(row => {
+            let expected = row.getAttribute('data-correct');
+            let select = row.querySelector('.image-select');
+            if (select.value === expected) {
+                select.classList.add('correct');
+                select.classList.remove('incorrect');
+            } else {
+                select.classList.add('incorrect');
+                select.classList.remove('correct');
+                t4Correct = false;
+            }
+        });
+        if (t4Correct) correctCount++;
+
+        // 5. Task 5 Check (Sequence)
+        let t5Correct = true;
+        let seqElements = document.querySelectorAll('#sortableSequence .sequence-item');
+        let currentOrder = Array.from(seqElements).map(el => el.getAttribute('data-order'));
+        let expectedOrder = ['1', '2', '3', '4'];
+        if (JSON.stringify(currentOrder) === JSON.stringify(expectedOrder)) {
+            seqElements.forEach(el => {
+                el.classList.add('correct');
+                el.classList.remove('incorrect');
+            });
+        } else {
+            seqElements.forEach(el => {
+                el.classList.add('incorrect');
+                el.classList.remove('correct');
+            });
+            t5Correct = false;
+        }
+        if (t5Correct) correctCount++;
+
+        // 6. Task 6 Check
+        let t6Selected = document.querySelector('input[name="q6"]:checked');
+        let t6Group = document.querySelector('#task6 .options-group');
+        if (t6Selected && t6Selected.value === 'correct') {
+            t6Group.classList.add('correct');
+            t6Group.classList.remove('incorrect');
+            correctCount++;
+        } else {
+            t6Group.classList.add('incorrect');
+            t6Group.classList.remove('correct');
+        }
+
+        // 7. Task 7 Check
+        let t7Selected = document.querySelector('#task7 .image-card.selected');
+        let t7Grid = document.querySelector('#task7 .image-selection-grid');
+        if (t7Selected && t7Selected.getAttribute('data-correct') === 'true') {
+            t7Grid.classList.add('correct');
+            t7Grid.classList.remove('incorrect');
+            correctCount++;
+        } else {
+            t7Grid.classList.add('incorrect');
+            t7Grid.classList.remove('correct');
+        }
+
+        // 8. Task 8 Check
+        let t8Input = document.getElementById('openAns');
+        let expectedT8 = t8Input.getAttribute('data-answer');
+        let actualT8 = t8Input.value.trim().toLowerCase();
+        if (actualT8 === expectedT8) {
+            t8Input.classList.add('correct');
+            t8Input.classList.remove('incorrect');
+            correctCount++;
+        } else {
+            t8Input.classList.add('incorrect');
+            t8Input.classList.remove('correct');
+        }
+
+        // Display Score Board
+        const scoreBoard = document.getElementById('scoreBoard');
+        document.getElementById('correctCount').textContent = correctCount;
+        document.getElementById('totalCount').textContent = totalCount;
+        scoreBoard.style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+</script>
+
+</body>
+</html>
